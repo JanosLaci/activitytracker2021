@@ -1,4 +1,4 @@
-package activitytracker;
+package activitytrackerList;
 
 
 //SQL
@@ -7,16 +7,12 @@ package activitytracker;
 //create user 'activitytracker'@'localhost' identified by 'activitytracker';
 //grant all on *.* to 'activitytracker'@'localhost';
 
-/*CREATE TABLE activities (
-		id BIGINT AUTO_INCREMENT,
-			start_time TIMESTAMP,
-			activity_desc VARCHAR(255),
-			activity_type VARCHAR(255),
-			PRIMARY KEY (id));
-
-Flyway V1__ -sal kezdődik!
-
-			*/
+//CREATE TABLE activities (
+//			id BIGINT AUTO_INCREMENT,
+//			start_time TIMESTAMP,
+//			activity_desc VARCHAR(255),
+//			activity_type VARCHAR(255),
+//			PRIMARY KEY (id));
 
 import java.time.LocalDateTime;
 
