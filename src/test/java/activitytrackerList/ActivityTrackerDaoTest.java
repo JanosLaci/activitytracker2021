@@ -61,7 +61,7 @@ class ActivityTrackerDaoTest {
     void insertActivity(){
         Activity activity = new Activity(
                 LocalDateTime.of(2021,4,1,10,10,10),"Biking again", ActivityType.BIKING );
-        activityTrackerDao.insertActivity(activity);
+        activityTrackerDao.insertActivityAndReturnActivityWithGeneratedId(activity);
 
         assertEquals(4,activityTrackerDao.selectAllActivities().size());
 

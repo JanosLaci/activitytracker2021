@@ -3,7 +3,6 @@ package activitytrackerList;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +18,22 @@ public class ActivityTrackerDao {
     }
 
 
-    public Activity insertActivity(Activity inputActivity){
+    private Activity getActivityWithIdAfterExecution(Activity inputActivity, PreparedStatement preparedStatement) throws SQLException {
+        try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
+            if (resultSet.next()){
+                long id = resultSet.getLong(1);
+                return new Activity(id,
+                        inputActivity.getStartTime(),
+                        inputActivity.getDesc(),
+                        inputActivity.getType()
+                );
+
+            }
+        }
+        throw new IllegalStateException("Cannot get keys");
+    }
+
+    public Activity insertActivityAndReturnActivityWithGeneratedId(Activity inputActivity){
 
         // Statement.RETURN_GENERATED_KEYS helyett elég "1"
 
@@ -34,12 +48,59 @@ public class ActivityTrackerDao {
             preparedStatement.setString(3, inputActivity.getType().toString());
 
             preparedStatement.executeUpdate();
+            Activity generatedActivityWithID = getActivityWithIdAfterExecution(inputActivity, preparedStatement);
 
-            return getIdAfterExecution(inputActivity, preparedStatement);
+            insertActivityTrackpoints(inputActivity.getTrackPoints(), generatedActivityWithID.getId());
+
+            return generatedActivityWithID;
         }
         catch (SQLException se) {
             throw new IllegalStateException("Cannot insert", se);
         }
+
+    }
+
+    private void insertActivityTrackpoints(List<TrackPoint> inputTrackPointList, long activity_id) {
+
+        try (Connection dataSourceConnection = dataSource.getConnection();
+        ) {
+            dataSourceConnection.setAutoCommit(false);
+
+            try (PreparedStatement preparedStatement = dataSourceConnection.prepareStatement(
+                    "INSERT INTO track_points (id, act_time, latitude, longitude, activity_id) VALUES (?.?,?,?)")
+            ) {
+                for (TrackPoint trackPoint: inputTrackPointList) {
+
+                    if (isTrackPointValid(trackPoint)) {
+
+                        //id BIGINT AUTO_INCREMENT miatt id-t nem insertelünk:
+                        //preparedStatement.setLong(1, trackPoint.getTrackPointId());
+                    preparedStatement.setDate(1,Date.valueOf(trackPoint.getDatum()) );
+                    preparedStatement.setDouble(2, trackPoint.getLatitude());
+                    preparedStatement.setDouble(3, trackPoint.getLongitude());
+                    preparedStatement.setLong(4, activity_id);
+                    preparedStatement.executeUpdate();
+                }
+                    else throw new IllegalArgumentException("Invalid input data.");
+                }
+                //Ha sikeresen végigment a for loop, commit:
+                dataSourceConnection.commit();
+            }
+            //Itt kapom el a IllegalArgumentException("Invalid input data.") kivételt
+            catch (IllegalArgumentException illegalArgumentException) {
+                dataSourceConnection.rollback();
+                throw new IllegalArgumentException("Invalid arguments", illegalArgumentException); }
+        }
+        //It kapom el a dataSourceConnection kivételt
+        catch (SQLException sqlException) { throw new IllegalStateException("Cannot insert", sqlException); }
+
+    }
+
+    private boolean isTrackPointValid(TrackPoint trackPoint){
+        return (trackPoint.getLatitude()<=90
+                && trackPoint.getLatitude()>=-90
+                && trackPoint.getLongitude()>=-180
+                && trackPoint.getLongitude()<=180);
 
     }
 
@@ -55,7 +116,7 @@ public class ActivityTrackerDao {
                     "INSERT INTO activities (start_time, activity_desc, activity_type) VALUES (?,?,?)")
             ) {
                 for (Activity inputActivity : inputActivityList) {
-                    if (inputActivity.getDesc() == null) {
+                    if (inputActivity.getDesc() == "") {
                         throw new IllegalArgumentException("Description cannot be null");
                     }
 
@@ -65,34 +126,17 @@ public class ActivityTrackerDao {
                     preparedStatement.executeUpdate();
                 }
                 dataSourceConnection.commit();
-            } catch (IllegalArgumentException illegalArgumentException) {
-
+            }
+            catch (Exception exception) {
                 dataSourceConnection.rollback();
-            }
-        } catch (SQLException sqlException) {
-
-            throw new IllegalStateException("Cannot insert", sqlException);
+                throw new IllegalArgumentException("Invalid arguments", exception); }
         }
-
-
+        catch (SQLException sqlException) { throw new IllegalStateException("Cannot insert", sqlException); }
     }
 
 
 
-    private Activity getIdAfterExecution(Activity inputActivity, PreparedStatement preparedStatement) throws SQLException {
-        try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
-            if (resultSet.next()){
-                long id = resultSet.getLong(1);
-                return new Activity(id,
-                        inputActivity.getStartTime(),
-                        inputActivity.getDesc(),
-                        inputActivity.getType()
-                        );
 
-            }
-        }
-        throw new IllegalStateException("Cannot get keys");
-    }
 
 
     private List<Activity> selectActivityByPreparedStatement(PreparedStatement preparedStatement){

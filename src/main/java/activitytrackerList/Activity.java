@@ -43,7 +43,15 @@ public class Activity {
 
     public void addTrackPoint(TrackPoint trackPoint){
         trackPoints.add(trackPoint);
+    }
 
+    public void addTrackPoints(List<TrackPoint> trackPoints ){
+        trackPoints.addAll(trackPoints);
+    }
+
+
+    public List<TrackPoint> getTrackPoints() {
+        return trackPoints;
     }
 
     public long getId() {
