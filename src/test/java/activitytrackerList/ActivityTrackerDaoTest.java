@@ -27,7 +27,23 @@ class ActivityTrackerDaoTest {
             throw new IllegalStateException("Connection failed", se);
         }
 
-        Flyway flyway = Flyway.configure().dataSource(dataSource).load();
+        //működik:
+        // Default
+        //classpath:db/migration
+        // semmi
+        // .locations("/db/migration/newlocationforflyway")
+        // .locations("db/migration/newlocationforflyway")
+        // .locations("db/migration")
+        // .locations("db")
+
+        //Nem működik:
+        // .locations("src/main/resources/db/migration/newlocationforflyway")
+        // .locations("/migration/newlocationforflyway")
+        // .locations("migration/newlocationforflyway")
+        // .locations("newlocationforflyway")
+
+        Flyway flyway = Flyway.configure().locations("classpath:db/migration").dataSource(dataSource).load();
+
         flyway.clean();
         flyway.migrate();
 
@@ -49,6 +65,12 @@ class ActivityTrackerDaoTest {
 
         assertEquals(4,activityTrackerDao.selectAllActivities().size());
 
+    }
+
+    @Test
+    void selectActivityBeforeDateTest(){
+
+        activityTrackerDao.selectActivityBeforeDate(LocalDateTime.now().toLocalDate());
     }
 
 }

@@ -15,6 +15,8 @@ package activitytrackerList;
 //			PRIMARY KEY (id));
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Activity {
 
@@ -22,6 +24,7 @@ public class Activity {
     private LocalDateTime startTime;
     private String desc;
     private ActivityType type;
+    private List<TrackPoint> trackPoints = new ArrayList<>();
 
 
     public Activity(long id, LocalDateTime startTime, String desc, ActivityType type) {
@@ -35,6 +38,12 @@ public class Activity {
         this.startTime = startTime;
         this.desc = desc;
         this.type = type;
+    }
+
+
+    public void addTrackPoint(TrackPoint trackPoint){
+        trackPoints.add(trackPoint);
+
     }
 
     public long getId() {
